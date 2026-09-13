@@ -14,6 +14,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
 server:
   port: 8080
   baseURL: "/"
+  cacheDir: "/config/cache"
   sources:
     - path: "/srv"
 auth:

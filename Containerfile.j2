@@ -128,11 +128,15 @@ RUN pkg update && \
     pkg clean -ay && \
     rm -rf /var/cache/pkg/* /var/db/pkg/repos/*
 
+# /app is world-readable and group/other-executable on purpose: the app resolves
+# some paths relative to its working directory, and cont-init re-chowns /config
+# to PUID but NOT /app. Without this, a non-default PUID cannot traverse /app.
 RUN mkdir -m 0755 -p /app /config /srv && \
-    chown -R bsd:bsd /app /config
+    chown -R bsd:bsd /app /config && \
+    chmod 0755 /app
 
 COPY --chmod=0755 --chown=bsd:bsd --from=builder /filebrowser-quantum /app/filebrowser-quantum
-RUN echo "${APP_VERSION#v}" | sed 's/-stable$//' > /app/version && \
+RUN echo "${APP_VERSION#v}" > /app/version && \
     chown bsd:bsd /app/version
 
 # NOTE: deliberately no /app/http/dist on disk.
