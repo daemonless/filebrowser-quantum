@@ -7,6 +7,7 @@ Source: dbuild templates
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/daemonless/filebrowser-quantum/build.yaml?style=flat-square&label=Build&color=green)](https://github.com/daemonless/filebrowser-quantum/actions)
 [![Last Commit](https://img.shields.io/github/last-commit/daemonless/filebrowser-quantum?style=flat-square&label=Last+Commit&color=blue)](https://github.com/daemonless/filebrowser-quantum/commits)
+[![OCI Pulls](https://img.shields.io/docker/pulls/daemonless/filebrowser-quantum?style=flat-square&label=OCI+Pulls&color=blue)](https://hub.docker.com/r/daemonless/filebrowser-quantum)
 
 Self-hosted web file manager with fast indexed search, granular share controls, and modern authentication (OIDC, LDAP, 2FA).
 
@@ -20,7 +21,7 @@ Self-hosted web file manager with fast indexed search, granular share controls, 
 ## Version Tags
 | Tag | Description | Best For |
 | :--- | :--- | :--- |
-| `latest` | **FreeBSD Port**. Built from latest FreeBSD packages. | Most users. Matches Linux Docker behavior. |
+| `latest` | **FreeBSD Port**. Built from latest FreeBSD packages. | Most users — recommended. |
 
 ## Prerequisites
 Before deploying, ensure your host environment is ready. See the [Quick Start Guide](https://daemonless.io/guides/quick-start) for host setup instructions.
@@ -44,8 +45,11 @@ services:
       - "/path/to/containers/filebrowser-quantum/srv:/srv"
     ports:
       - "8080:8080"
-    restart: unless-stopped
+    # always (not unless-stopped) so FreeBSD's podman rc.d auto-starts it at boot
+    restart: always
 ```
+
+Save as `compose.yaml`, then run `podman-compose up -d`.
 
 ### AppJail Director
 **.env**:
@@ -72,8 +76,8 @@ services:
   filebrowser-quantum:
     name: filebrowser_quantum
     options:
-      - container: 'boot args:--pull'
-      - expose: '8080:8080 proto:tcp' \
+      - container: 'args:--pull'
+      - expose: '8080:8080 proto:tcp'
     oci:
       user: root
       environment:
@@ -98,10 +102,18 @@ volumes:
 
 ARG tag=latest
 
+OPTION container=boot
 OPTION overwrite=force
 OPTION from=ghcr.io/daemonless/filebrowser-quantum:${tag}
 ```
-**Note**: Exposing ports in AppJail means that your service can be reached from remote hosts. If that is not your intention, do not expose the ports and communicate with the service using the IPv4 address assigned by the virtual network.
+
+Save the files above, then run `appjail-director up`.
+
+
+> [!WARNING]
+> Exposing ports in AppJail means that your service can be reached from remote hosts. If that is not your intention, do not expose the ports and communicate with the service using the jail's IPv4 address or hostname assigned by the virtual network.
+>
+> To avoid exposing ports, just remove the `expose` option in your `appjail-director.yml` or from your command-line arguments.
 
 ### Podman CLI
 
@@ -117,7 +129,10 @@ podman run -d --name filebrowser-quantum \
   ghcr.io/daemonless/filebrowser-quantum:latest
 ```
 
+Save as `run.sh`, then run `sh run.sh`.
+
 ### AppJail
+
 
 ```bash
 appjail oci run -Pd \
@@ -134,7 +149,49 @@ appjail oci run -Pd \
   -o fstab="/path/to/containers/filebrowser-quantum/srv /srv <pseudofs>" \
   ghcr.io/daemonless/filebrowser-quantum:latest filebrowser-quantum
 ```
-**Note**: Exposing ports in AppJail means that your service can be reached from remote hosts. If that is not your intention, do not expose the ports and communicate with the service using the IPv4 address assigned by the virtual network.
+
+Save the files above, then run `sh run.sh`.
+
+
+> [!WARNING]
+> Exposing ports in AppJail means that your service can be reached from remote hosts. If that is not your intention, do not expose the ports and communicate with the service using the jail's IPv4 address or hostname assigned by the virtual network.
+>
+> To avoid exposing ports, just remove the `expose` option in your `appjail-director.yml` or from your command-line arguments.
+
+### Bastille
+
+> [!WARNING]
+> Bastille's OCI support is **experimental**. It requires `buildah` and shares the host network stack (`inherit`). Mount volumes with `--volume HOST JAIL`; without it, image-declared volumes are stored under `${bastille_volumesdir}/${jail}`.
+
+```yaml
+services:
+  filebrowser-quantum:
+    name: filebrowser-quantum
+    image: "ghcr.io/daemonless/filebrowser-quantum:latest"
+    network:
+      - mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+      - FILEBROWSER_CONFIG=
+    volumes:
+      - "/path/to/containers/filebrowser-quantum:/config"
+      - "/path/to/containers/filebrowser-quantum/srv:/srv"
+```
+
+Save as `bastille-compose.yml`, then run `bastille up`. Or via CLI:
+
+```bash
+bastille create -O \
+  --env PUID=1000 \
+  --env PGID=1000 \
+  --env TZ=UTC \
+  --env FILEBROWSER_CONFIG= \
+  --volume /path/to/containers/filebrowser-quantum /config \
+  --volume /path/to/containers/filebrowser-quantum/srv /srv \
+  filebrowser-quantum ghcr.io/daemonless/filebrowser-quantum:latest inherit
+```
 
 ### Ansible
 
@@ -156,6 +213,8 @@ appjail oci run -Pd \
       - "/path/to/containers/filebrowser-quantum:/config"
       - "/path/to/containers/filebrowser-quantum/srv:/srv"
 ```
+
+Save as `filebrowser-quantum-deploy.yaml`, then run `ansible-playbook filebrowser-quantum-deploy.yaml`.
 
 Access at: `http://localhost:8080`
 
