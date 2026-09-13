@@ -1,0 +1,47 @@
+name: filebrowser-quantum
+
+x-daemonless:
+  class: "service"
+  title: "FileBrowser Quantum"
+  icon: ":material-folder-network:"  # https://pictogrammers.com/library/mdi/
+  category: "Utilities"
+  description: "Self-hosted web file manager with fast indexed search, granular share controls, and modern authentication (OIDC, LDAP, 2FA)."
+  upstream_url: "https://github.com/gtsteffaniak/filebrowser"
+  web_url: "https://filebrowserquantum.com"
+  freshports_url: "https://www.freshports.org/www/filebrowser-quantum/"
+  user: "bsd"
+  mlock: false
+  upstream_binary: false
+  appjail: true
+  community: "Discord:https://discord.gg/Kb9tkhecZT"
+
+  docs:
+    env:
+      PUID: "User ID for the application process"
+      PGID: "Group ID for the application process"
+      TZ: "Timezone for the container"
+      FILEBROWSER_CONFIG:
+        desc: "Path to config.yaml. Defaults to /config/config.yaml; the container writes a minimal starter there on first boot if absent."
+        optional: true
+    volumes:
+      /config: "Configuration (config.yaml) and the database"
+      /srv: "Default mount point for the files you want to browse. Mount one or more sources here and declare them under `server.sources` in config.yaml."
+
+services:
+  filebrowser-quantum:
+    image: ghcr.io/daemonless/filebrowser-quantum:latest
+    container_name: filebrowser-quantum
+    # always (not unless-stopped) so FreeBSD's podman rc.d auto-starts it at boot
+    restart: always
+
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+
+    volumes:
+      - /path/to/containers/filebrowser-quantum:/config
+      - /path/to/your/files:/srv
+
+    ports:
+      - 8080:8080

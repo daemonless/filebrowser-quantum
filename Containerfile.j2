@@ -1,0 +1,156 @@
+ARG BASE_VERSION=15.1
+
+# Pinned upstream release. FileBrowser Quantum ships two parallel lines — a
+# v1.5.x-stable line and a v2.0.x-beta line — so a bare "latest release" lookup
+# is NOT safe here. The UPSTREAM_JQ below filters to non-prerelease *-stable tags
+# for drift detection; APP_VERSION is what actually gets built.
+ARG APP_VERSION="v1.5.6-stable"
+ARG UPSTREAM_URL="https://api.github.com/repos/gtsteffaniak/filebrowser/releases"
+ARG UPSTREAM_JQ="[.[] | select(.prerelease == false) | .tag_name | select(endswith(\"-stable\"))][0]"
+
+# ---------------------------------------------------------------------------
+# Builder — Go + Node toolchain. Discarded; only the binary reaches the runtime.
+#
+# Pinned to the `-latest` pkg branch, not the default (quarterly): go.mod needs
+# Go 1.27.0 and quarterly has no go127, so a quarterly builder fails with
+# "No packages available to install matching 'go127'". Only the builder needs
+# this; the runtime stage stays on the default branch.
+# ---------------------------------------------------------------------------
+ARG BUILDER_BASE_VERSION=15.1-latest
+FROM ghcr.io/daemonless/base:${BUILDER_BASE_VERSION} AS builder
+
+ARG APP_VERSION
+
+# go127 matches backend/go.mod (`go 1.27.0`); node22 matches upstream's
+# `FROM node:jod-slim` (22.x LTS). No C compiler: the build is CGO_ENABLED=0.
+RUN pkg update && \
+    pkg install -y go127 node22 npm-node22 git-tiny && \
+    pkg clean -ay && \
+    rm -rf /var/cache/pkg/* /var/db/pkg/repos/*
+
+RUN ln -sf /usr/local/bin/go127 /usr/local/bin/go
+
+# Fetch and extract the pinned source tarball
+RUN fetch -qo /tmp/src.tar.gz \
+      "https://github.com/gtsteffaniak/filebrowser/archive/refs/tags/${APP_VERSION}.tar.gz" && \
+    mkdir -p /src && \
+    tar -C /src -xzf /tmp/src.tar.gz --strip-components 1 && \
+    rm /tmp/src.tar.gz
+
+# --- Frontend ---
+# MUST run before `go build`: the backend go:embed's backend/http/embed/*.
+# Use `npm run build` (NOT `build:docker`) — build:docker emits only
+# backend/http/dist, which is the on-disk path, leaving embed/ empty.
+# `npm ci` against the committed lockfile, not upstream's `npm i`, which can
+# silently update it.
+WORKDIR /src/frontend
+RUN npm ci --no-audit --no-fund
+RUN mkdir -p /src/backend/http/embed && npm run build
+
+# Drift guard: if upstream renames the embed target, `go build` would still
+# succeed against a stale or empty embed dir and ship a blank UI.
+RUN test -n "$(find /src/backend/http/embed -type f -name '*.html' -print -quit)" || \
+      { echo "EMBED DRIFT: no HTML in backend/http/embed after 'npm run build'"; exit 1; }
+
+# --- Backend ---
+# CGO_ENABLED=0 is deliberate and load-bearing:
+#   * primary datastore is BoltDB via asdine/storm (pure Go), not SQLite
+#   * the internal SQLite TempDB defaults to modernc.org/sqlite (pure Go);
+#     mattn/go-sqlite3 is gated behind `-tags cgosql`, which we do NOT pass
+#   * `-tags mupdf` (PDF thumbnails via go-fitz) is the only other cgo user,
+#     also omitted
+# Result: a static binary, no C toolchain, no runtime shared-library deps.
+WORKDIR /src/backend
+ENV CGO_ENABLED=0
+RUN VERSION_PKG="github.com/gtsteffaniak/filebrowser/backend/common/version" && \
+    go build -trimpath \
+      -ldflags "-w -s -X '${VERSION_PKG}.Version=${APP_VERSION}'" \
+      -o /filebrowser-quantum . && \
+    /filebrowser-quantum version || true
+
+# ---------------------------------------------------------------------------
+# Runtime
+# ---------------------------------------------------------------------------
+FROM ghcr.io/daemonless/base:${BASE_VERSION}
+
+ARG FREEBSD_ARCH=amd64
+ARG APP_VERSION
+ARG UPSTREAM_URL
+ARG UPSTREAM_JQ
+# ffmpeg is optional — it powers video thumbnails and HEIC conversion only, and
+# degrades per-file rather than failing to start. Left out to keep the image
+# small; set FILEBROWSER_FFMPEG_PATH and mount one in if you want previews.
+ARG PACKAGES="ca_root_nss"
+{%- if ports %}
+ARG HEALTHCHECK_ENDPOINT="http://localhost:{{ ports[0].port }}/health"
+{%- else %}
+ARG HEALTHCHECK_ENDPOINT="http://localhost:8080/health"
+{%- endif %}
+
+ENV HEALTHCHECK_URL="${HEALTHCHECK_ENDPOINT}"
+
+# --- Metadata (Injected by Generator) ---
+LABEL org.opencontainers.image.title="{{ title }}" \
+      org.opencontainers.image.description="{{ description }}" \
+      org.opencontainers.image.source="{{ repo_url }}" \
+      org.opencontainers.image.url="{{ web_url }}" \
+      org.opencontainers.image.documentation="https://filebrowserquantum.com/en/docs/" \
+      org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.vendor="daemonless" \
+      org.opencontainers.image.authors="daemonless" \
+      io.daemonless.category="{{ category }}" \
+{%- if ports %}
+      io.daemonless.port="{{ ports[0].port }}" \
+{%- endif %}
+{%- if volumes %}
+      io.daemonless.volumes="{{ volumes | map(attribute='path') | join(',') }}" \
+{%- endif %}
+{%- if mlock %}
+      org.freebsd.jail.allow.mlock="required" \
+{%- endif %}
+      io.daemonless.arch="${FREEBSD_ARCH}" \
+      io.daemonless.pkg-source="source" \
+      io.daemonless.upstream-url="${UPSTREAM_URL}" \
+      io.daemonless.upstream-jq="${UPSTREAM_JQ}" \
+      io.daemonless.healthcheck-url="${HEALTHCHECK_ENDPOINT}" \
+      io.daemonless.packages="${PACKAGES}"
+
+# Update to latest patch level
+RUN pkg update -r FreeBSD-base && \
+    pkg upgrade -y -r FreeBSD-base && \
+    pkg clean -ay && \
+    rm -rf /var/cache/pkg/* /var/db/pkg/repos/*
+
+# Install run dependencies
+RUN pkg update && \
+    pkg install -y ${PACKAGES} && \
+    pkg clean -ay && \
+    rm -rf /var/cache/pkg/* /var/db/pkg/repos/*
+
+RUN mkdir -m 0755 -p /app /config /srv && \
+    chown -R bsd:bsd /app /config
+
+COPY --chmod=0755 --chown=bsd:bsd --from=builder /filebrowser-quantum /app/filebrowser-quantum
+RUN echo "${APP_VERSION#v}" | sed 's/-stable$//' > /app/version && \
+    chown bsd:bsd /app/version
+
+# NOTE: deliberately no /app/http/dist on disk.
+# backend/cmd/root.go does os.Stat("http/dist") *relative to the process CWD* and
+# prefers on-disk assets over the embedded FS when that path exists. Shipping the
+# dist tree would make the UI depend on whatever directory s6 happens to exec
+# from. The embedded FS has no such dependency, so the binary stands alone.
+
+COPY root/ /
+
+RUN chmod +x /etc/services.d/*/run /healthz 2>/dev/null || true
+
+# --- Expose (Injected by Generator) ---
+{%- if ports %}
+EXPOSE {{ ports | map(attribute='target') | join(' ') }}
+{%- endif %}
+
+# --- Volumes (Injected by Generator) ---
+{%- if volumes %}
+VOLUME {{ volumes | map(attribute='path') | join(' ') }}
+{%- endif %}

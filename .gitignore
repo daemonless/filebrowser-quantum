@@ -1,0 +1,8 @@
+scripts/
+sbom-results
+*.log
+
+# Local working notes, kept out of the published image repo.
+PLAN.md
+PROCESS-LOG.md
+BUILD-NOTES.md

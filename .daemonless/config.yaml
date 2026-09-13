@@ -1,0 +1,15 @@
+# dbuild configuration file
+# Full reference: https://github.com/daemonless/dbuild
+
+build:
+  variants:
+    - tag: latest
+      containerfile: Containerfile
+
+cit:
+  mode: health
+  port: 8080
+  # Served with no auth middleware, so it answers before any user is created.
+  health: /health
+  # Frontend (npm ci + vite) plus a full Go build from source.
+  timeout: 180

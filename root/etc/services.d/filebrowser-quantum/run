@@ -1,0 +1,47 @@
+#!/bin/sh
+# FileBrowser Quantum s6 service
+
+CONFIG_FILE="${FILEBROWSER_CONFIG:-/config/config.yaml}"
+
+# First boot: write a starter config rather than crash-looping. Anything the
+# user mounts at /config/config.yaml wins — this only fires when absent.
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "[INFO] no config at ${CONFIG_FILE} — writing a starter config"
+    cat > "$CONFIG_FILE" <<'EOF'
+# 8080, not upstream's default of 80: this container runs the app as the
+# unprivileged `bsd` user, and binding <1024 fails with
+# "listen tcp 0.0.0.0:80: bind: permission denied".
+server:
+  port: 8080
+  baseURL: "/"
+  sources:
+    - path: "/srv"
+auth:
+  methods:
+    password:
+      enabled: true
+      # Upstream's default, and it must stay 5 here. On first boot the app
+      # creates its bootstrap admin user, and a higher minLength rejects that
+      # user's own generated password:
+      #   [FATAL] store.Users.Save: password must be at least 8 characters long
+      # Raise it in your own config *after* first boot, once real accounts exist.
+      minLength: 5
+      signup: false
+EOF
+fi
+
+export FILEBROWSER_CONFIG="$CONFIG_FILE"
+export FILEBROWSER_DATABASE="${FILEBROWSER_DATABASE:-/config/database.db}"
+
+# The config file's parent dir holds the BoltDB, so it must be writable by bsd.
+chown -R bsd:bsd /config 2>/dev/null || true
+
+exec 2>&1
+
+# `cd /app` is load-bearing, not tidiness: backend/cmd/root.go does
+# os.Stat("http/dist") relative to the process CWD and serves from disk if it
+# finds one. /app deliberately has no http/dist, so the embedded assets win and
+# the UI cannot depend on where s6 happened to exec from.
+s6-ready-when fetch -qo /dev/null "${HEALTHCHECK_URL:-http://localhost:8080/health}"
+
+exec s6-setuidgid bsd cd /app /app/filebrowser-quantum

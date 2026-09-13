@@ -1,0 +1,10 @@
+#!/bin/sh
+# Daemonless standard healthcheck for filebrowser-quantum
+#
+# GET /health is served with no auth middleware, so it answers 200 before any
+# user exists. Override HEALTHCHECK_URL if you move server.port off 80.
+
+if fetch -qo /dev/null "${HEALTHCHECK_URL:-http://localhost:8080/health}" >/dev/null 2>&1; then
+    exit 0
+fi
+exit 1
