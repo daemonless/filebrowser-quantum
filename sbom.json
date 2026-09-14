@@ -1,11 +1,11 @@
 {
-  "generated": "2026-09-13T22:09:43Z",
+  "generated": "2026-09-14T00:14:46Z",
   "image": "filebrowser-quantum",
   "tags": {
     "latest": {
-      "app_version": "1.5.6",
+      "app_version": "1.5.6-stable",
       "arch": "amd64",
-      "generated": "2026-09-13T22:09:11Z",
+      "generated": "2026-09-14T00:13:36Z",
       "packages": {
         "dotnet": [],
         "freebsd": [
