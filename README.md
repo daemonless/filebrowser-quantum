@@ -41,8 +41,8 @@ services:
       - TZ=UTC  # Timezone for the container
       - FILEBROWSER_CONFIG=  # Path to config.yaml. Defaults to /config/config.yaml; the container writes a minimal starter there on first boot if absent.
     volumes:
-      - "/path/to/containers/filebrowser-quantum:/config"
-      - "/path/to/containers/filebrowser-quantum/srv:/srv"
+      - "/containers/filebrowser-quantum:/config"
+      - "/containers/filebrowser-quantum/srv:/srv"
     ports:
       - "8080:8080"
     # always (not unless-stopped) so FreeBSD's podman rc.d auto-starts it at boot
@@ -90,9 +90,9 @@ services:
       - filebrowser-quantum_srv: /srv
 volumes:
   filebrowser-quantum:
-    device: '/path/to/containers/filebrowser-quantum'
+    device: '/containers/filebrowser-quantum'
   filebrowser-quantum_srv:
-    device: '/path/to/containers/filebrowser-quantum/srv'
+    device: '/containers/filebrowser-quantum/srv'
 ```
 
 **Makejail**:
@@ -108,49 +108,6 @@ OPTION from=ghcr.io/daemonless/filebrowser-quantum:${tag}
 ```
 
 Save the files above, then run `appjail-director up`.
-
-
-> [!WARNING]
-> Exposing ports in AppJail means that your service can be reached from remote hosts. If that is not your intention, do not expose the ports and communicate with the service using the jail's IPv4 address or hostname assigned by the virtual network.
->
-> To avoid exposing ports, just remove the `expose` option in your `appjail-director.yml` or from your command-line arguments.
-
-### Podman CLI
-
-```bash
-podman run -d --name filebrowser-quantum \
-  -p 8080:8080 \
-  -e PUID=1000 \
-  -e PGID=1000 \
-  -e TZ=UTC \
-  -e FILEBROWSER_CONFIG= \
-  -v /path/to/containers/filebrowser-quantum:/config \
-  -v /path/to/containers/filebrowser-quantum/srv:/srv \
-  ghcr.io/daemonless/filebrowser-quantum:latest
-```
-
-Save as `run.sh`, then run `sh run.sh`.
-
-### AppJail
-
-
-```bash
-appjail oci run -Pd \
-  -o overwrite=force \
-  -o container="args:--pull" \
-  -o virtualnet=":<random> default" \
-  -o nat \
-  -o expose="8080:8080 proto:tcp" \
-  -e PUID=1000 \
-  -e PGID=1000 \
-  -e TZ=UTC \
-  -e FILEBROWSER_CONFIG= \
-  -o fstab="/path/to/containers/filebrowser-quantum /config <pseudofs>" \
-  -o fstab="/path/to/containers/filebrowser-quantum/srv /srv <pseudofs>" \
-  ghcr.io/daemonless/filebrowser-quantum:latest filebrowser-quantum
-```
-
-Save the files above, then run `sh run.sh`.
 
 
 > [!WARNING]
@@ -176,45 +133,11 @@ services:
       - TZ=UTC
       - FILEBROWSER_CONFIG=
     volumes:
-      - "/path/to/containers/filebrowser-quantum:/config"
-      - "/path/to/containers/filebrowser-quantum/srv:/srv"
+      - "/containers/filebrowser-quantum:/config"
+      - "/containers/filebrowser-quantum/srv:/srv"
 ```
 
-Save as `bastille-compose.yml`, then run `bastille up`. Or via CLI:
-
-```bash
-bastille create -O \
-  --env PUID=1000 \
-  --env PGID=1000 \
-  --env TZ=UTC \
-  --env FILEBROWSER_CONFIG= \
-  --volume /path/to/containers/filebrowser-quantum /config \
-  --volume /path/to/containers/filebrowser-quantum/srv /srv \
-  filebrowser-quantum ghcr.io/daemonless/filebrowser-quantum:latest inherit
-```
-
-### Ansible
-
-```yaml
-- name: Deploy filebrowser-quantum
-  containers.podman.podman_container:
-    name: filebrowser-quantum
-    image: "ghcr.io/daemonless/filebrowser-quantum:latest"
-    state: started
-    restart_policy: always
-    env:
-      PUID: "1000"
-      PGID: "1000"
-      TZ: "UTC"
-      FILEBROWSER_CONFIG: ""
-    ports:
-      - "8080:8080"
-    volumes:
-      - "/path/to/containers/filebrowser-quantum:/config"
-      - "/path/to/containers/filebrowser-quantum/srv:/srv"
-```
-
-Save as `filebrowser-quantum-deploy.yaml`, then run `ansible-playbook filebrowser-quantum-deploy.yaml`.
+Save as `bastille-compose.yml`, then run `bastille up`.
 
 Access at: `http://localhost:8080`
 
