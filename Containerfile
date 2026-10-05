@@ -6,11 +6,11 @@
 
 ARG BASE_VERSION=15.1
 
-# Pinned upstream release. FileBrowser Quantum ships two parallel lines — a
+# Upstream release tracking. FileBrowser Quantum ships two parallel lines — a
 # v1.5.x-stable line and a v2.0.x-beta line — so a bare "latest release" lookup
-# is NOT safe here. The UPSTREAM_JQ below filters to non-prerelease *-stable tags
-# for drift detection; APP_VERSION is what actually gets built.
-ARG APP_VERSION="v1.5.6-stable"
+# is NOT safe here. The UPSTREAM_JQ below filters to non-prerelease *-stable tags.
+# If APP_VERSION is not provided, the builder stage auto-resolves the latest *-stable release.
+ARG APP_VERSION=""
 ARG UPSTREAM_URL="https://api.github.com/repos/gtsteffaniak/filebrowser/releases"
 ARG UPSTREAM_JQ="[.[] | select(.prerelease == false) | .tag_name | select(endswith(\"-stable\"))][0]"
 
@@ -26,6 +26,8 @@ ARG BUILDER_BASE_VERSION=15.1-latest
 FROM ghcr.io/daemonless/base:${BUILDER_BASE_VERSION} AS builder
 
 ARG APP_VERSION
+ARG UPSTREAM_URL
+ARG UPSTREAM_JQ
 
 # go127 matches backend/go.mod (`go 1.27.0`); node22 matches upstream's
 # `FROM node:jod-slim` (22.x LTS). No C compiler: the build is CGO_ENABLED=0.
@@ -36,8 +38,14 @@ RUN pkg update && \
 
 RUN ln -sf /usr/local/bin/go127 /usr/local/bin/go
 
-# Fetch and extract the pinned source tarball
-RUN fetch -qo /tmp/src.tar.gz \
+# Fetch and extract the source tarball (auto-resolving latest stable release if APP_VERSION not provided)
+RUN if [ -z "${APP_VERSION}" ]; then \
+      APP_VERSION=$(fetch -qo - "${UPSTREAM_URL}" | jq -r "${UPSTREAM_JQ}"); \
+    fi && \
+    echo "Building FileBrowser Quantum ${APP_VERSION}" && \
+    echo "${APP_VERSION}" > /tmp/app_version && \
+    echo "${APP_VERSION#v}" > /tmp/version && \
+    fetch -qo /tmp/src.tar.gz \
       "https://github.com/gtsteffaniak/filebrowser/archive/refs/tags/${APP_VERSION}.tar.gz" && \
     mkdir -p /src && \
     tar -C /src -xzf /tmp/src.tar.gz --strip-components 1 && \
@@ -69,6 +77,7 @@ RUN test -n "$(find /src/backend/http/embed -type f -name '*.html' -print -quit)
 WORKDIR /src/backend
 ENV CGO_ENABLED=0
 RUN VERSION_PKG="github.com/gtsteffaniak/filebrowser/backend/common/version" && \
+    APP_VERSION=$(cat /tmp/app_version) && \
     go build -trimpath \
       -ldflags "-w -s -X '${VERSION_PKG}.Version=${APP_VERSION}'" \
       -o /filebrowser-quantum . && \
@@ -97,7 +106,7 @@ LABEL org.opencontainers.image.title="FileBrowser Quantum" \
       org.opencontainers.image.source="https://github.com/daemonless/filebrowser-quantum" \
       org.opencontainers.image.url="https://filebrowserquantum.com" \
       org.opencontainers.image.documentation="https://filebrowserquantum.com/en/docs/" \
-      org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.version="latest" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.vendor="daemonless" \
       org.opencontainers.image.authors="daemonless" \
@@ -131,8 +140,7 @@ RUN mkdir -m 0755 -p /app /config /srv && \
     chmod 0755 /app
 
 COPY --chmod=0755 --chown=bsd:bsd --from=builder /filebrowser-quantum /app/filebrowser-quantum
-RUN echo "${APP_VERSION#v}" > /app/version && \
-    chown bsd:bsd /app/version
+COPY --chmod=0644 --chown=bsd:bsd --from=builder /tmp/version /app/version
 
 # NOTE: deliberately no /app/http/dist on disk.
 # backend/cmd/root.go does os.Stat("http/dist") *relative to the process CWD* and
