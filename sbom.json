@@ -1,11 +1,11 @@
 {
-  "generated": "2026-10-04T22:15:59Z",
+  "generated": "2026-10-05T22:26:57Z",
   "image": "filebrowser-quantum",
   "tags": {
     "latest": {
-      "app_version": "1.5.6-stable",
+      "app_version": "1.5.8-stable",
       "arch": "amd64",
-      "generated": "2026-10-04T22:15:20Z",
+      "generated": "2026-10-05T22:26:28Z",
       "packages": {
         "dotnet": [],
         "freebsd": [
@@ -351,12 +351,12 @@
           {
             "name": "github.com/dustin/go-humanize",
             "purl": "",
-            "version": "v1.0.1"
+            "version": "v1.1.0"
           },
           {
             "name": "github.com/fxamacker/cbor/v2",
             "purl": "",
-            "version": "v2.9.3"
+            "version": "v2.9.4"
           },
           {
             "name": "github.com/gabriel-vasile/mimetype",
@@ -386,12 +386,12 @@
           {
             "name": "github.com/go-openapi/jsonpointer",
             "purl": "",
-            "version": "v1.0.1"
+            "version": "v1.0.2"
           },
           {
             "name": "github.com/go-openapi/jsonreference",
             "purl": "",
-            "version": "v1.0.2"
+            "version": "v1.0.3"
           },
           {
             "name": "github.com/go-openapi/spec",
@@ -401,52 +401,52 @@
           {
             "name": "github.com/go-openapi/swag/conv",
             "purl": "",
-            "version": "v0.29.1"
+            "version": "v0.29.2"
           },
           {
             "name": "github.com/go-openapi/swag/jsonutils",
             "purl": "",
-            "version": "v0.29.1"
+            "version": "v0.29.2"
           },
           {
             "name": "github.com/go-openapi/swag/loading",
             "purl": "",
-            "version": "v0.29.1"
+            "version": "v0.29.2"
           },
           {
             "name": "github.com/go-openapi/swag/pools",
             "purl": "",
-            "version": "v0.29.1"
+            "version": "v0.29.2"
           },
           {
             "name": "github.com/go-openapi/swag/stringutils",
             "purl": "",
-            "version": "v0.29.1"
+            "version": "v0.29.2"
           },
           {
             "name": "github.com/go-openapi/swag/typeutils",
             "purl": "",
-            "version": "v0.29.1"
+            "version": "v0.29.2"
           },
           {
             "name": "github.com/go-openapi/swag/yamlutils",
             "purl": "",
-            "version": "v0.29.1"
+            "version": "v0.29.2"
           },
           {
             "name": "github.com/go-playground/locales",
             "purl": "",
-            "version": "v0.14.1"
+            "version": "v0.14.2"
           },
           {
             "name": "github.com/go-playground/universal-translator",
             "purl": "",
-            "version": "v0.18.1"
+            "version": "v0.18.2"
           },
           {
             "name": "github.com/go-playground/validator/v10",
             "purl": "",
-            "version": "v10.30.4"
+            "version": "v10.30.5"
           },
           {
             "name": "github.com/go-viper/mapstructure/v2",
@@ -456,12 +456,12 @@
           {
             "name": "github.com/go-webauthn/webauthn",
             "purl": "",
-            "version": "v0.18.0"
+            "version": "v0.18.2"
           },
           {
             "name": "github.com/go-webauthn/x",
             "purl": "",
-            "version": "v0.3.0"
+            "version": "v0.3.1"
           },
           {
             "name": "github.com/goccy/go-yaml",
@@ -481,7 +481,7 @@
           {
             "name": "github.com/golang/geo",
             "purl": "",
-            "version": "v0.0.0-20260818125358-b200a1149890"
+            "version": "v0.0.0-20260928092222-7d12f68cfadb"
           },
           {
             "name": "github.com/google/go-tpm",
@@ -536,7 +536,7 @@
           {
             "name": "github.com/ncruces/go-strftime",
             "purl": "",
-            "version": "v1.0.0"
+            "version": "v1.1.0"
           },
           {
             "name": "github.com/philhofer/fwd",
@@ -576,7 +576,7 @@
           {
             "name": "github.com/tinylib/msgp",
             "purl": "",
-            "version": "v1.6.4"
+            "version": "v1.6.5"
           },
           {
             "name": "github.com/x448/float16",
@@ -596,52 +596,52 @@
           {
             "name": "golang.org/x/crypto",
             "purl": "",
-            "version": "v0.56.0"
+            "version": "v0.57.0"
           },
           {
             "name": "golang.org/x/image",
             "purl": "",
-            "version": "v0.45.0"
+            "version": "v0.46.0"
           },
           {
             "name": "golang.org/x/mod",
             "purl": "",
-            "version": "v0.40.0"
+            "version": "v0.41.0"
           },
           {
             "name": "golang.org/x/net",
             "purl": "",
-            "version": "v0.58.0"
+            "version": "v0.59.0"
           },
           {
             "name": "golang.org/x/oauth2",
             "purl": "",
-            "version": "v0.36.0"
+            "version": "v0.37.0"
           },
           {
             "name": "golang.org/x/sync",
             "purl": "",
-            "version": "v0.22.0"
+            "version": "v0.23.0"
           },
           {
             "name": "golang.org/x/sys",
             "purl": "",
-            "version": "v0.47.0"
+            "version": "v0.48.0"
           },
           {
             "name": "golang.org/x/text",
             "purl": "",
-            "version": "v0.41.0"
+            "version": "v0.42.0"
           },
           {
             "name": "golang.org/x/time",
             "purl": "",
-            "version": "v0.15.0"
+            "version": "v0.16.0"
           },
           {
             "name": "golang.org/x/tools",
             "purl": "",
-            "version": "v0.49.0"
+            "version": "v0.51.0"
           },
           {
             "name": "gopkg.in/yaml.v2",
@@ -656,7 +656,7 @@
           {
             "name": "modernc.org/libc",
             "purl": "",
-            "version": "v1.75.7"
+            "version": "v1.77.1"
           },
           {
             "name": "modernc.org/mathutil",
@@ -671,7 +671,7 @@
           {
             "name": "modernc.org/sqlite",
             "purl": "",
-            "version": "v1.58.0"
+            "version": "v1.60.1"
           },
           {
             "name": "stdlib",
