@@ -11,5 +11,6 @@ cit:
   port: 8080
   # Served with no auth middleware, so it answers before any user is created.
   health: /health
+  ready: "Running at"
   # Frontend (npm ci + vite) plus a full Go build from source.
   timeout: 180

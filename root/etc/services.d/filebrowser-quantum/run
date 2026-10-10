@@ -11,9 +11,10 @@ if [ ! -f "$CONFIG_FILE" ]; then
 # 8080, not upstream's default of 80: this container runs the app as the
 # unprivileged `bsd` user, and binding <1024 fails with
 # "listen tcp 0.0.0.0:80: bind: permission denied".
-server:
+http:
   port: 8080
   baseURL: "/"
+server:
   cacheDir: "/config/cache"
   sources:
     - path: "/srv"
@@ -32,17 +33,16 @@ EOF
 fi
 
 export FILEBROWSER_CONFIG="$CONFIG_FILE"
-export FILEBROWSER_DATABASE="${FILEBROWSER_DATABASE:-/config/database.db}"
+export FILEBROWSER_DATABASE_PATH="${FILEBROWSER_DATABASE_PATH:-/config/filebrowser.sqlite}"
 
-# The config file's parent dir holds the BoltDB, so it must be writable by bsd.
+# The config file's parent dir holds the database, so it must be writable by bsd.
 chown -R bsd:bsd /config 2>/dev/null || true
 
 exec 2>&1
 
 # `cd /app` is load-bearing, not tidiness: backend/cmd/root.go does
-# os.Stat("http/dist") relative to the process CWD and serves from disk if it
-# finds one. /app deliberately has no http/dist, so the embedded assets win and
-# the UI cannot depend on where s6 happened to exec from.
+# os.Stat("internal/web/dist") relative to the process CWD and serves from disk
+# if it finds one. /app deliberately has no dist tree, so the embedded assets win.
 s6-ready-when fetch -qo /dev/null "${HEALTHCHECK_URL:-http://localhost:8080/health}"
 
-exec s6-setuidgid bsd cd /app /app/filebrowser-quantum
+cd /app && exec s6-setuidgid bsd /app/filebrowser-quantum

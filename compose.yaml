@@ -40,7 +40,7 @@ services:
       - TZ=UTC
 
     volumes:
-      - /path/to/containers/filebrowser-quantum:/config
+      - /containers/filebrowser-quantum:/config
       - /path/to/your/files:/srv
 
     ports:

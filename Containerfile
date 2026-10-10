@@ -52,19 +52,21 @@ RUN if [ -z "${APP_VERSION}" ]; then \
     rm /tmp/src.tar.gz
 
 # --- Frontend ---
-# MUST run before `go build`: the backend go:embed's backend/http/embed/*.
-# Use `npm run build` (NOT `build:docker`) — build:docker emits only
-# backend/http/dist, which is the on-disk path, leaving embed/ empty.
+# MUST run before `go build`: the backend go:embed's frontend assets.
+# In v1.5.x, assets embed into backend/http/embed/*.
+# In v2.0.x, assets embed into backend/internal/web/embed/* (e.g. public/index.html).
+# Use `npm run build` (NOT `build:docker`) — build:docker emits only the
+# on-disk dist path, leaving embed/ empty.
 # `npm ci` against the committed lockfile, not upstream's `npm i`, which can
 # silently update it.
 WORKDIR /src/frontend
 RUN npm ci --no-audit --no-fund
-RUN mkdir -p /src/backend/http/embed && npm run build
+RUN mkdir -p /src/backend/http/embed /src/backend/internal/web/embed && npm run build
 
 # Drift guard: if upstream renames the embed target, `go build` would still
 # succeed against a stale or empty embed dir and ship a blank UI.
-RUN test -n "$(find /src/backend/http/embed -type f -name '*.html' -print -quit)" || \
-      { echo "EMBED DRIFT: no HTML in backend/http/embed after 'npm run build'"; exit 1; }
+RUN test -n "$(find /src/backend -type f -name '*.html' -path '*/embed/*' -print -quit)" || \
+      { echo "EMBED DRIFT: no HTML in backend embed directory after 'npm run build'"; exit 1; }
 
 # --- Backend ---
 # CGO_ENABLED=0 is deliberate and load-bearing:
@@ -76,7 +78,11 @@ RUN test -n "$(find /src/backend/http/embed -type f -name '*.html' -print -quit)
 # Result: a static binary, no C toolchain, no runtime shared-library deps.
 WORKDIR /src/backend
 ENV CGO_ENABLED=0
-RUN VERSION_PKG="github.com/gtsteffaniak/filebrowser/backend/common/version" && \
+RUN if [ -d /src/backend/internal/version ]; then \
+      VERSION_PKG="github.com/gtsteffaniak/filebrowser/backend/internal/version"; \
+    else \
+      VERSION_PKG="github.com/gtsteffaniak/filebrowser/backend/common/version"; \
+    fi && \
     APP_VERSION=$(cat /tmp/app_version) && \
     go build -trimpath \
       -ldflags "-w -s -X '${VERSION_PKG}.Version=${APP_VERSION}'" \
@@ -142,11 +148,12 @@ RUN mkdir -m 0755 -p /app /config /srv && \
 COPY --chmod=0755 --chown=bsd:bsd --from=builder /filebrowser-quantum /app/filebrowser-quantum
 COPY --chmod=0644 --chown=bsd:bsd --from=builder /tmp/version /app/version
 
-# NOTE: deliberately no /app/http/dist on disk.
-# backend/cmd/root.go does os.Stat("http/dist") *relative to the process CWD* and
-# prefers on-disk assets over the embedded FS when that path exists. Shipping the
-# dist tree would make the UI depend on whatever directory s6 happens to exec
-# from. The embedded FS has no such dependency, so the binary stands alone.
+# NOTE: deliberately no dist directory on disk.
+# backend/cmd/root.go checks relative to the process CWD (http/dist in v1.5,
+# internal/web/dist in v2.0) and prefers on-disk assets over the embedded FS
+# when that path exists. Shipping the dist tree would make the UI depend on
+# whatever directory s6 happens to exec from. The embedded FS has no such
+# dependency, so the binary stands alone.
 
 COPY root/ /
 
