@@ -1,11 +1,11 @@
 {
-  "generated": "2026-10-05T22:26:57Z",
+  "generated": "2026-10-11T09:19:14Z",
   "image": "filebrowser-quantum",
   "tags": {
     "latest": {
-      "app_version": "1.5.8-stable",
+      "app_version": "2.0.0-stable",
       "arch": "amd64",
-      "generated": "2026-10-05T22:26:28Z",
+      "generated": "2026-10-11T09:18:44Z",
       "packages": {
         "dotnet": [],
         "freebsd": [
@@ -280,7 +280,7 @@
               "BSD2CLAUSE"
             ],
             "name": "pkg",
-            "version": "2.7.5"
+            "version": "2.8.4"
           },
           {
             "licenses": [
@@ -307,6 +307,11 @@
             "name": "github.com/KyleBanks/depth",
             "purl": "",
             "version": "v1.2.1"
+          },
+          {
+            "name": "github.com/alecthomas/kong",
+            "purl": "",
+            "version": "v1.16.1"
           },
           {
             "name": "github.com/asdine/storm/v3",
@@ -354,6 +359,11 @@
             "version": "v1.1.0"
           },
           {
+            "name": "github.com/evanoberholster/imagemeta",
+            "purl": "",
+            "version": "v1.1.0"
+          },
+          {
             "name": "github.com/fxamacker/cbor/v2",
             "purl": "",
             "version": "v2.9.4"
@@ -386,12 +396,12 @@
           {
             "name": "github.com/go-openapi/jsonpointer",
             "purl": "",
-            "version": "v1.0.2"
+            "version": "v1.0.1"
           },
           {
             "name": "github.com/go-openapi/jsonreference",
             "purl": "",
-            "version": "v1.0.3"
+            "version": "v1.0.2"
           },
           {
             "name": "github.com/go-openapi/spec",
@@ -436,7 +446,7 @@
           {
             "name": "github.com/go-playground/locales",
             "purl": "",
-            "version": "v0.14.2"
+            "version": "v0.14.1"
           },
           {
             "name": "github.com/go-playground/universal-translator",
@@ -481,7 +491,7 @@
           {
             "name": "github.com/golang/geo",
             "purl": "",
-            "version": "v0.0.0-20260928092222-7d12f68cfadb"
+            "version": "v0.0.0-20260818125358-b200a1149890"
           },
           {
             "name": "github.com/google/go-tpm",
@@ -502,6 +512,11 @@
             "name": "github.com/gtsteffaniak/go-cache",
             "purl": "",
             "version": "v1.1.0"
+          },
+          {
+            "name": "github.com/gtsteffaniak/go-ffmpeg",
+            "purl": "",
+            "version": "v0.5.2"
           },
           {
             "name": "github.com/gtsteffaniak/go-logger",
@@ -536,12 +551,17 @@
           {
             "name": "github.com/ncruces/go-strftime",
             "purl": "",
-            "version": "v1.1.0"
+            "version": "v1.0.0"
           },
           {
             "name": "github.com/philhofer/fwd",
             "purl": "",
             "version": "v1.2.0"
+          },
+          {
+            "name": "github.com/pkg/errors",
+            "purl": "",
+            "version": "v0.9.1"
           },
           {
             "name": "github.com/pquerna/otp",
@@ -576,7 +596,7 @@
           {
             "name": "github.com/tinylib/msgp",
             "purl": "",
-            "version": "v1.6.5"
+            "version": "v1.6.4"
           },
           {
             "name": "github.com/x448/float16",
@@ -629,6 +649,11 @@
             "version": "v0.48.0"
           },
           {
+            "name": "golang.org/x/term",
+            "purl": "",
+            "version": "v0.46.0"
+          },
+          {
             "name": "golang.org/x/text",
             "purl": "",
             "version": "v0.42.0"
@@ -641,7 +666,7 @@
           {
             "name": "golang.org/x/tools",
             "purl": "",
-            "version": "v0.51.0"
+            "version": "v0.50.0"
           },
           {
             "name": "gopkg.in/yaml.v2",
@@ -671,7 +696,7 @@
           {
             "name": "modernc.org/sqlite",
             "purl": "",
-            "version": "v1.60.1"
+            "version": "v1.59.0"
           },
           {
             "name": "stdlib",
@@ -690,14 +715,14 @@
       "summary": {
         "dotnet": 0,
         "freebsd": 41,
-        "go": 76,
+        "go": 81,
         "java": 0,
         "node": 0,
         "php": 0,
         "python": 0,
         "ruby": 0,
         "rust": 0,
-        "total": 117
+        "total": 122
       }
     }
   }
