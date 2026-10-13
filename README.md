@@ -39,7 +39,7 @@ services:
       - PUID=1000  # User ID for the application process
       - PGID=1000  # Group ID for the application process
       - TZ=UTC  # Timezone for the container
-      - FILEBROWSER_CONFIG=  # Path to config.yaml. Defaults to /config/config.yaml; the container writes a minimal starter there on first boot if absent.
+      # - FILEBROWSER_CONFIG=  # Path to config.yaml. Defaults to /config/config.yaml; the container writes a minimal starter there on first boot if absent.
     volumes:
       - "/containers/filebrowser-quantum:/config"
       - "/containers/filebrowser-quantum/srv:/srv"
@@ -61,7 +61,6 @@ DIRECTOR_PROJECT=filebrowser-quantum
 PUID=1000
 PGID=1000
 TZ=UTC
-FILEBROWSER_CONFIG=
 ```
 
 **appjail-director.yml**:
@@ -84,7 +83,6 @@ services:
         - PUID: !ENV '${PUID}'
         - PGID: !ENV '${PGID}'
         - TZ: !ENV '${TZ}'
-        - FILEBROWSER_CONFIG: !ENV '${FILEBROWSER_CONFIG}'
     volumes:
       - filebrowser-quantum: /config
       - filebrowser-quantum_srv: /srv
@@ -131,7 +129,6 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=UTC
-      - FILEBROWSER_CONFIG=
     volumes:
       - "/containers/filebrowser-quantum:/config"
       - "/containers/filebrowser-quantum/srv:/srv"

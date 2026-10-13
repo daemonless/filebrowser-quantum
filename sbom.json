@@ -1,11 +1,11 @@
 {
-  "generated": "2026-10-11T09:19:14Z",
+  "generated": "2026-10-13T23:27:50Z",
   "image": "filebrowser-quantum",
   "tags": {
     "latest": {
-      "app_version": "2.0.0-stable",
+      "app_version": "2.0.1-stable",
       "arch": "amd64",
-      "generated": "2026-10-11T09:18:44Z",
+      "generated": "2026-10-13T23:27:08Z",
       "packages": {
         "dotnet": [],
         "freebsd": [
@@ -252,7 +252,7 @@
               "MPL20"
             ],
             "name": "ca_root_nss",
-            "version": "3.130"
+            "version": "3.131"
           },
           {
             "licenses": [
@@ -701,7 +701,7 @@
           {
             "name": "stdlib",
             "purl": "",
-            "version": "v1.27.1"
+            "version": "v1.27.2"
           }
         ],
         "java": [],
