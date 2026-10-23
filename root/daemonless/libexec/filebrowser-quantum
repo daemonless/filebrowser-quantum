@@ -1,5 +1,5 @@
 #!/bin/sh
-# FileBrowser Quantum s6 service
+# Start filebrowser-quantum; /init has already dropped to the run user.
 
 CONFIG_FILE="${FILEBROWSER_CONFIG:-/config/config.yaml}"
 
@@ -35,14 +35,7 @@ fi
 export FILEBROWSER_CONFIG="$CONFIG_FILE"
 export FILEBROWSER_DATABASE_PATH="${FILEBROWSER_DATABASE_PATH:-/config/filebrowser.sqlite}"
 
-# The config file's parent dir holds the database, so it must be writable by bsd.
-chown -R bsd:bsd /config 2>/dev/null || true
-
 exec 2>&1
 
-# `cd /app` is load-bearing, not tidiness: backend/cmd/root.go does
-# os.Stat("internal/web/dist") relative to the process CWD and serves from disk
-# if it finds one. /app deliberately has no dist tree, so the embedded assets win.
-s6-ready-when fetch -qo /dev/null "${HEALTHCHECK_URL:-http://localhost:8080/health}"
-
-cd /app && exec s6-setuidgid bsd /app/filebrowser-quantum
+cd /app
+exec /app/filebrowser-quantum

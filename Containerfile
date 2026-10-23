@@ -23,7 +23,7 @@ ARG UPSTREAM_JQ="[.[] | select(.prerelease == false) | .tag_name | select(endswi
 # this; the runtime stage stays on the default branch.
 # ---------------------------------------------------------------------------
 ARG BUILDER_BASE_VERSION=15.1-latest
-FROM ghcr.io/daemonless/base:${BUILDER_BASE_VERSION} AS builder
+FROM ghcr.io/daemonless/base-exec:${BUILDER_BASE_VERSION} AS builder
 
 ARG APP_VERSION
 ARG UPSTREAM_URL
@@ -92,7 +92,7 @@ RUN if [ -d /src/backend/internal/version ]; then \
 # ---------------------------------------------------------------------------
 # Runtime
 # ---------------------------------------------------------------------------
-FROM ghcr.io/daemonless/base:${BASE_VERSION}
+FROM ghcr.io/daemonless/base-exec:${BASE_VERSION}
 
 ARG FREEBSD_ARCH=amd64
 ARG APP_VERSION
@@ -156,8 +156,11 @@ COPY --chmod=0644 --chown=bsd:bsd --from=builder /tmp/version /app/version
 # dependency, so the binary stands alone.
 
 COPY root/ /
+RUN chmod +x /daemonless/libexec/filebrowser-quantum
 
-RUN chmod +x /etc/services.d/*/run /healthz 2>/dev/null || true
+CMD ["/daemonless/libexec/filebrowser-quantum"]
+
+RUN chmod +x /healthz
 
 # --- Expose (Injected by Generator) ---
 EXPOSE 8080
