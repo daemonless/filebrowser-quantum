@@ -1,11 +1,7 @@
 ARG BASE_VERSION=15.1
 
-# Upstream release tracking. FileBrowser Quantum ships two parallel lines — a
-# *-stable line (v2.0.x) and a *-beta line (v2.1.x) — and marks neither as a GitHub
-# prerelease, so a bare "latest release" lookup is NOT safe here. The UPSTREAM_JQ below
-# filters to *-stable tags. If APP_VERSION is not provided, the builder stage
-# auto-resolves the latest *-stable release. The `beta` variant in .daemonless/config.yaml
-# overrides UPSTREAM_JQ to follow *-beta tags instead.
+# Upstream ships *-stable and *-beta lines, neither marked prerelease, so the lookup
+# filters by tag suffix. The beta variant overrides UPSTREAM_JQ to follow *-beta.
 ARG APP_VERSION=""
 ARG UPSTREAM_URL="https://api.github.com/repos/gtsteffaniak/filebrowser/releases"
 ARG UPSTREAM_JQ="[.[] | select(.prerelease == false) | .tag_name | select(endswith(\"-stable\"))][0]"
@@ -35,8 +31,6 @@ RUN pkg update && \
 RUN ln -sf /usr/local/bin/go127 /usr/local/bin/go
 
 # Fetch and extract the source tarball (auto-resolving latest stable release if APP_VERSION not provided)
-# An empty or "null" lookup (no matching tag in the first page of releases) fails here
-# by name, instead of later as an opaque fetch of .../tags/null.tar.gz.
 RUN if [ -z "${APP_VERSION}" ]; then \
       APP_VERSION=$(fetch -qo - "${UPSTREAM_URL}" | jq -r "${UPSTREAM_JQ}"); \
     fi && \
@@ -44,9 +38,7 @@ RUN if [ -z "${APP_VERSION}" ]; then \
       { echo "UPSTREAM LOOKUP EMPTY: no release matched UPSTREAM_JQ"; exit 1; }; } && \
     echo "Building FileBrowser Quantum ${APP_VERSION}" && \
     echo "${APP_VERSION}" > /tmp/app_version && \
-    # Tag shape matches the Immich images: dbuild publishes the beta variant as
-    # <version>-beta, so the version drops upstream's own -beta (2.1.4-beta, not
-    # 2.1.4-beta-beta). The label then reads 2.1.4, as immich-server's 3.3.5-beta reads v3.3.5.
+    # dbuild appends -beta to the tag, so drop upstream's (2.1.4-beta, not 2.1.4-beta-beta).
     v="${APP_VERSION#v}" && echo "${v%-beta}" > /tmp/version && \
     fetch -qo /tmp/src.tar.gz \
       "https://github.com/gtsteffaniak/filebrowser/archive/refs/tags/${APP_VERSION}.tar.gz" && \
@@ -56,9 +48,7 @@ RUN if [ -z "${APP_VERSION}" ]; then \
 
 # --- Frontend ---
 # MUST run before `go build`: the backend go:embed's frontend assets.
-# In v2.x (stable and beta), assets embed into backend/internal/web/embed/*
-# (e.g. public/index.html). backend/http/embed/* is the v1.5.x location, kept so an
-# APP_VERSION pinned to 1.5.x still builds.
+# Assets embed into backend/internal/web/embed/* (v2.x) or backend/http/embed/* (v1.5.x).
 # Use `npm run build` (NOT `build:docker`) — build:docker emits only the
 # on-disk dist path, leaving embed/ empty.
 # `npm ci` against the committed lockfile, not upstream's `npm i`, which can
