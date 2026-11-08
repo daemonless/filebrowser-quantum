@@ -5,6 +5,13 @@ build:
   variants:
     - tag: latest
       containerfile: Containerfile
+      default: true
+      tag_desc: Stable release (*-stable) built from upstream source.
+    - tag: beta
+      containerfile: Containerfile
+      tag_desc: Beta release (*-beta) built from upstream source.
+      args:
+        UPSTREAM_JQ: '[.[] | select(.prerelease == false) | .tag_name | select(endswith("-beta"))][0]'
 
 cit:
   mode: health

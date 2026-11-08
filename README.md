@@ -21,7 +21,8 @@ Self-hosted web file manager with fast indexed search, granular share controls, 
 ## Version Tags
 | Tag | Description | Best For |
 | :--- | :--- | :--- |
-| `latest` | **FreeBSD Port**. Built from latest FreeBSD packages. | Most users — recommended. |
+| `latest` | Stable release (*-stable) built from upstream source. | Most users — recommended. |
+| `beta` | Beta release (*-beta) built from upstream source. | Alternative build. |
 
 ## Prerequisites
 Before deploying, ensure your host environment is ready. See the [Quick Start Guide](https://daemonless.io/guides/quick-start) for host setup instructions.

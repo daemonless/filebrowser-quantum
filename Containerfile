@@ -6,10 +6,8 @@
 
 ARG BASE_VERSION=15.1
 
-# Upstream release tracking. FileBrowser Quantum ships two parallel lines — a
-# v1.5.x-stable line and a v2.0.x-beta line — so a bare "latest release" lookup
-# is NOT safe here. The UPSTREAM_JQ below filters to non-prerelease *-stable tags.
-# If APP_VERSION is not provided, the builder stage auto-resolves the latest *-stable release.
+# Upstream ships *-stable and *-beta lines, neither marked prerelease, so the lookup
+# filters by tag suffix. The beta variant overrides UPSTREAM_JQ to follow *-beta.
 ARG APP_VERSION=""
 ARG UPSTREAM_URL="https://api.github.com/repos/gtsteffaniak/filebrowser/releases"
 ARG UPSTREAM_JQ="[.[] | select(.prerelease == false) | .tag_name | select(endswith(\"-stable\"))][0]"
@@ -42,9 +40,12 @@ RUN ln -sf /usr/local/bin/go127 /usr/local/bin/go
 RUN if [ -z "${APP_VERSION}" ]; then \
       APP_VERSION=$(fetch -qo - "${UPSTREAM_URL}" | jq -r "${UPSTREAM_JQ}"); \
     fi && \
+    { [ -n "${APP_VERSION}" ] && [ "${APP_VERSION}" != "null" ] || \
+      { echo "UPSTREAM LOOKUP EMPTY: no release matched UPSTREAM_JQ"; exit 1; }; } && \
     echo "Building FileBrowser Quantum ${APP_VERSION}" && \
     echo "${APP_VERSION}" > /tmp/app_version && \
-    echo "${APP_VERSION#v}" > /tmp/version && \
+    # dbuild appends -beta to the tag, so drop upstream's (2.1.4-beta, not 2.1.4-beta-beta).
+    v="${APP_VERSION#v}" && echo "${v%-beta}" > /tmp/version && \
     fetch -qo /tmp/src.tar.gz \
       "https://github.com/gtsteffaniak/filebrowser/archive/refs/tags/${APP_VERSION}.tar.gz" && \
     mkdir -p /src && \
@@ -53,8 +54,7 @@ RUN if [ -z "${APP_VERSION}" ]; then \
 
 # --- Frontend ---
 # MUST run before `go build`: the backend go:embed's frontend assets.
-# In v1.5.x, assets embed into backend/http/embed/*.
-# In v2.0.x, assets embed into backend/internal/web/embed/* (e.g. public/index.html).
+# Assets embed into backend/internal/web/embed/* (v2.x) or backend/http/embed/* (v1.5.x).
 # Use `npm run build` (NOT `build:docker`) — build:docker emits only the
 # on-disk dist path, leaving embed/ empty.
 # `npm ci` against the committed lockfile, not upstream's `npm i`, which can
@@ -150,9 +150,9 @@ COPY --chmod=0644 --chown=bsd:bsd --from=builder /tmp/version /app/version
 
 # NOTE: deliberately no dist directory on disk.
 # backend/cmd/root.go checks relative to the process CWD (http/dist in v1.5,
-# internal/web/dist in v2.0) and prefers on-disk assets over the embedded FS
+# internal/web/dist in v2.x) and prefers on-disk assets over the embedded FS
 # when that path exists. Shipping the dist tree would make the UI depend on
-# whatever directory s6 happens to exec from. The embedded FS has no such
+# whatever directory the start script happens to exec from. The embedded FS has no such
 # dependency, so the binary stands alone.
 
 COPY root/ /
