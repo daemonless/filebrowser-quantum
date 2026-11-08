@@ -7,9 +7,6 @@ build:
       containerfile: Containerfile
       default: true
       tag_desc: Stable release (*-stable) built from upstream source.
-    # Upstream runs a *-beta line (v2.1.x) alongside *-stable (v2.0.x). Beta follows the newest
-    # *-beta tag by the same lookup latest uses for *-stable, so the image's upstream labels
-    # match what it runs and a rebuild picks up each new beta without a config edit.
     - tag: beta
       containerfile: Containerfile
       tag_desc: Beta release (*-beta) built from upstream source.
